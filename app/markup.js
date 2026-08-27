@@ -193,6 +193,18 @@ const MARKUP = `
         <div>
           <div class="card" style="margin:0 0 14px"><h2>สรุปวันที่เลือก</h2><div id="mpSummary"></div></div>
           <div class="card pvpanel" style="margin:0"><h2 id="mpPvTitle">รายละเอียดจังหวัด</h2><div id="mpPvBody"><div class="empty">คลิกจังหวัดบนแผนที่เพื่อดูอำเภอ / ตำบล</div></div></div>
+          <div class="card" style="margin:14px 0 0">
+            <h2>Google Maps <small>ตำแหน่งจริงของจุดส่ง</small></h2>
+            <div class="row" style="margin-bottom:9px">
+              <button class="btn sm" id="btnGmapOpen">เปิดใน Google Maps</button>
+              <button class="btn sm" id="btnGmapRoute">เส้นทางส่งของวันที่เลือก</button>
+            </div>
+            <div class="gmapwrap">
+              <div class="gmapempty" id="gmapEmpty">คลิกจังหวัดบนแผนที่ประเทศไทย เพื่อดูตำแหน่งจริงจาก Google Maps</div>
+              <iframe id="gmapFrame" title="Google Maps" loading="lazy" referrerpolicy="no-referrer-when-downgrade" style="display:none"></iframe>
+            </div>
+            <div class="hint" id="gmapNote" style="margin-top:7px"></div>
+          </div>
         </div>
       </div>
     </section>

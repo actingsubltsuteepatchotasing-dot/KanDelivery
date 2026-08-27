@@ -669,6 +669,59 @@ const MAP_W=560, MAP_H=1010, LNG0=97.3, LNG1=105.7, LAT0=5.5, LAT1=20.6;
 const mx = lng => (lng-LNG0)/(LNG1-LNG0)*MAP_W;
 const my = lat => (LAT1-lat)/(LAT1-LAT0)*MAP_H;
 let mapSelProv = null;
+let mapSelDocId = null;
+let gmapQ = null;
+
+/* ---- เชื่อมกับ Google Maps (ไม่ต้องใช้ API key) ---- */
+function gmapAddr(d){
+  return [d.address, d.tambon?'ต.'+d.tambon:'', d.amphoe?'อ.'+d.amphoe:'',
+          d.province?'จ.'+d.province:'', 'ประเทศไทย'].filter(Boolean).join(' ');
+}
+function gmapSearchUrl(q){
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+}
+/* แสดงแผนที่ Google แบบฝังในหน้า (โหลดซ้ำเฉพาะตอนตำแหน่งเปลี่ยน) */
+function setGmap(q, zoom, note){
+  const fr = $('#gmapFrame'), em = $('#gmapEmpty'), nt = $('#gmapNote');
+  q = q || null;
+  nt.textContent = note || '';
+  if(q === gmapQ) return;
+  gmapQ = q;
+  if(!q){
+    fr.style.display = 'none'; fr.removeAttribute('src');
+    em.style.display = 'flex';
+    return;
+  }
+  em.style.display = 'none'; fr.style.display = 'block';
+  fr.src = 'https://maps.google.com/maps?q=' + encodeURIComponent(q) +
+           '&z=' + (zoom||12) + '&hl=th&output=embed';
+}
+/* เปิดตำแหน่งที่กำลังดูอยู่ในแอป/เว็บ Google Maps */
+function gmapOpen(){
+  if(!gmapQ){ toast('เลือกจังหวัดหรือจุดส่งก่อน','err'); return; }
+  window.open(gmapSearchUrl(gmapQ), '_blank', 'noopener');
+}
+/* เปิดเส้นทางส่งของทั้งวัน (ตามวันที่ + รถ ที่เลือกไว้) ใน Google Maps */
+function gmapRoute(){
+  const docs = mapDocs();
+  if(!docs.length){ toast('ไม่มีรายการส่งในวันที่เลือก','err'); return; }
+  const stops = docs.map(gmapAddr);
+  if(stops.length === 1){
+    window.open(gmapSearchUrl(stops[0]), '_blank', 'noopener');
+    return;
+  }
+  const MAXW = 8;                       // Google Maps รับจุดแวะได้จำกัด
+  const origin = stops[0], dest = stops[stops.length-1];
+  let mid = stops.slice(1, -1), cut = 0;
+  if(mid.length > MAXW){ cut = mid.length - MAXW; mid = mid.slice(0, MAXW); }
+  const url = 'https://www.google.com/maps/dir/?api=1&travelmode=driving' +
+    '&origin=' + encodeURIComponent(origin) +
+    '&destination=' + encodeURIComponent(dest) +
+    (mid.length ? '&waypoints=' + mid.map(encodeURIComponent).join('%7C') : '');
+  window.open(url, '_blank', 'noopener');
+  toast(cut ? 'เปิดเส้นทาง ' + (stops.length-cut) + ' จุด (เกินขีดจำกัด Google Maps ตัดออก ' + cut + ' จุด)'
+            : 'เปิดเส้นทาง ' + stops.length + ' จุดใน Google Maps', 'ok');
+}
 
 function mapDocs(){
   const date = $('#mpDate').value;
@@ -713,7 +766,7 @@ function renderMap(){
   $('#thmap').innerHTML = svg;
   $('#thmap').onclick = e => {
     const g = e.target.closest('.pv'); if(!g) return;
-    mapSelProv = g.dataset.p; renderMap();
+    mapSelProv = g.dataset.p; mapSelDocId = null; renderMap();
   };
 
   const names = Object.keys(byProv).sort((a,b)=>byProv[b].length-byProv[a].length);
@@ -725,7 +778,7 @@ function renderMap(){
     <table><thead><tr><th>จังหวัด</th><th>เอกสาร</th><th>รถ</th></tr></thead><tbody>
     ${names.map(n=>{
       const veh = Array.from(new Set(byProv[n].map(d=>{const v=vehById(d.vehicleId); return v?v.plate:'-';})));
-      return `<tr style="cursor:pointer" onclick="mapSelProv='${n.replace(/'/g,"\\'")}';renderMap()">
+      return `<tr style="cursor:pointer" onclick="mapSelProv='${n.replace(/'/g,"\\'")}';mapSelDocId=null;renderMap()">
         <td>${esc(n)}</td><td>${byProv[n].length}</td><td class="addr">${esc(veh.join(', '))}</td></tr>`;
     }).join('')}
     </tbody></table>` : '<div class="empty">ไม่มีรายการส่งในวันที่เลือก</div>';
@@ -737,27 +790,50 @@ function renderProvPanel(byProv){
   if(!mapSelProv){
     $('#mpPvTitle').textContent = 'รายละเอียดจังหวัด';
     $('#mpPvBody').innerHTML = '<div class="empty">คลิกจังหวัดบนแผนที่เพื่อดูอำเภอ / ตำบล</div>';
+    setGmap(null);
     return;
   }
   const list = byProv[mapSelProv] || [];
   const meta = PROVINCES.find(p=>p[0]===mapSelProv);
-  $('#mpPvTitle').innerHTML = 'จังหวัด' + esc(mapSelProv) + ` <small style="font-weight:400;color:var(--muted)">ภาค${esc(meta?meta[3]:'-')}</small>`;
+  $('#mpPvTitle').innerHTML = 'จังหวัด' + esc(mapSelProv) +
+    ` <small style="font-weight:400;color:var(--muted)">ภาค${esc(meta?meta[3]:'-')}</small>`;
+
   if(!list.length){
     $('#mpPvBody').innerHTML = `<div class="empty">ไม่มีรายการส่งที่จังหวัดนี้ในวันที่เลือก</div>`;
+    setGmap('จังหวัด' + mapSelProv + ' ประเทศไทย', 9, 'กำลังแสดง: จังหวัด' + mapSelProv);
     return;
   }
+
+  /* จุดส่งที่เลือกอยู่ (ถ้ายังอยู่ในรายการ) ถ้าไม่มีจะแสดงทั้งจังหวัด */
+  const sel = list.find(d=>d.id===mapSelDocId) || null;
+  if(!sel) mapSelDocId = null;
+
   const byAmp = {};
   list.forEach(d=>{ const a=d.amphoe||'(ไม่ระบุอำเภอ)'; (byAmp[a]=byAmp[a]||[]).push(d); });
+
   $('#mpPvBody').innerHTML = Object.keys(byAmp).sort().map(a=>`
     <div style="margin-bottom:12px">
       <div style="font-weight:700;font-size:13.5px;color:var(--brand)">อ.${esc(a)} <span class="addr">(${byAmp[a].length} เอกสาร)</span></div>
       ${byAmp[a].map(d=>`
-        <div class="it">
+        <div class="it${d.id===mapSelDocId?' sel':''}" data-id="${d.id}" title="คลิกเพื่อดูตำแหน่งบน Google Maps">
           <b>${esc(d.docNo)} ${badge(d.status)}</b>
           <div>${esc(d.customer)}</div>
           <div class="addr">${esc(d.address||'')} ${esc(d.tambon?'ต.'+d.tambon:'')} · ${esc(vehLabel(vehById(d.vehicleId)))}</div>
+          <a class="gmaplink" href="${esc(gmapSearchUrl(gmapAddr(d)))}" target="_blank" rel="noopener">◎ เปิดใน Google Maps</a>
         </div>`).join('')}
     </div>`).join('');
+
+  /* คลิกที่รายการ -> เลื่อนแผนที่ Google ไปที่ที่อยู่นั้น */
+  $('#mpPvBody').onclick = e => {
+    if(e.target.closest('a')) return;              /* ปล่อยให้ลิงก์ทำงานตามปกติ */
+    const it = e.target.closest('.it'); if(!it) return;
+    mapSelDocId = (mapSelDocId === it.dataset.id) ? null : it.dataset.id;
+    renderProvPanel(byProv);
+  };
+
+  if(sel) setGmap(gmapAddr(sel), 16, 'กำลังแสดง: ' + sel.docNo + ' — ' + sel.customer);
+  else    setGmap('จังหวัด' + mapSelProv + ' ประเทศไทย', 9,
+                  'กำลังแสดง: จังหวัด' + mapSelProv + ' · คลิกรายการด้านบนเพื่อดูตำแหน่งจุดส่ง');
 }
 
 /* =====================================================================
@@ -849,6 +925,8 @@ function render(){
 ['#rpDate','#rpDate2','#rpVeh'].forEach(s=>$(s).addEventListener('change', renderReport));
 ['#mpDate','#mpVeh'].forEach(s=>$(s).addEventListener('change', ()=>{ mapSelProv=null; renderMap(); }));
 $('#calVeh').addEventListener('change', renderCalendar);
+$('#btnGmapOpen').addEventListener('click', gmapOpen);
+$('#btnGmapRoute').addEventListener('click', gmapRoute);
 $('#scanVehicle').addEventListener('change', ()=>$('#scanInput').focus());
 $('#scanDate').addEventListener('change', renderScan);
 
