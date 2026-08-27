@@ -1,7 +1,11 @@
 ===========================================================
 ระบบบันทึกสถานะการส่งสินค้า - บริษัท เกาอาน จำกัด
 โครงสร้าง: Next.js (App Router) + deploy บน Vercel
-เวอร์ชัน: 2.1
+เวอร์ชัน: 2.2  (ขึ้นใช้งานจริงบน Vercel แล้ว)
+
+  *** เว็บใช้งานจริง: https://kandelivery.vercel.app ***
+      โปรเจกต์บน Vercel : sutee-admin/kandelivery
+      GitHub repo       : https://github.com/actingsubltsuteepatchotasing-dot/KanDelivery
 อัปเดตล่าสุด: 27 สิงหาคม 2569 (2026-08-27)
 
   ไฟล์ในโปรเจกต์
@@ -33,7 +37,12 @@
 11. ภาพแผนที่ประเทศได้จะต้องมีจังหวัด ตำบล อำเภอ ด้วย ให้ต่อกับ google map
 
 
- # Deployment  = OK (Vercel + Next.js พร้อม deploy แล้ว)
+ # Deployment  = OK (deploy ขึ้น Vercel จริงแล้ว 27 ส.ค. 2569)
+ - URL ใช้งานจริง: https://kandelivery.vercel.app
+ - โปรเจกต์: sutee-admin/kandelivery (เชื่อมกับ GitHub repo KanDelivery แล้ว)
+ - เชื่อม Git อัตโนมัติ: push ขึ้น branch main เมื่อไหร่ Vercel จะ build
+   และอัปเดตเว็บให้เองทันที ไม่ต้องสั่ง deploy ซ้ำ
+ - ถ้าจะ deploy จากเครื่องเองก็ทำได้: npx vercel deploy --prod
  - ใช้ Vercel + Next.js 15 (App Router) รันบน Vercel เท่านั้น
  - "ไม่ต้องติดตั้งอะไรทั้งสิ้น" = ในเครื่องเราไม่ต้องลงอะไรเลย
    ไม่ต้องลง Node.js ไม่ต้องรัน npm install ไม่ต้อง build เอง
@@ -41,15 +50,14 @@
  - vercel.json ระบุ framework = nextjs ไว้แล้ว (Vercel ตั้งค่าที่เหลือให้เอง)
  - .vercelignore กัน Note.txt / CLAUDE.md / legacy/ ไม่ให้ขึ้นเว็บสาธารณะ
 
- วิธี deploy (เลือกอย่างใดอย่างหนึ่ง)
- A. ลากโฟลเดอร์: เข้า vercel.com -> Add New -> Project -> Deploy
-    ลากโฟลเดอร์นี้ทั้งโฟลเดอร์ลงไป (ไม่ต้องลาก node_modules เพราะไม่มี)
-    -> Vercel ตรวจเจอ Next.js เอง -> Deploy -> ได้ URL ใช้งานทันที
- B. ผ่าน Git: push โฟลเดอร์นี้ขึ้น GitHub -> Import Project ใน Vercel
-    -> Framework Preset ขึ้นเป็น "Next.js" อยู่แล้ว -> Deploy
-    -> หลังจากนี้แค่ push ใหม่ Vercel จะ build + อัปเดตเว็บให้อัตโนมัติ
- * เวลา build ครั้งแรกประมาณ 1-2 นาที
- * ห้ามอัปโฟลเดอร์ node_modules / .next ขึ้นไป (มี .gitignore กันไว้แล้ว)
+ วิธีอัปเดตเว็บหลังจากนี้ (ตั้งค่าเสร็จหมดแล้ว ทำแค่ 3 ขั้น)
+ 1. แก้ไฟล์ (public/app.js / app/markup.js / app/globals.css) + แก้ Note.txt
+ 2. git add -A ; git commit -m "ข้อความ" ; git push
+ 3. Vercel build ให้เองอัตโนมัติ ~1-2 นาที แล้วเว็บอัปเดต
+
+ ไฟล์ที่ห้าม commit (มี .gitignore กันไว้แล้ว)
+ - .vercel/ และ .env.local  = token ของ Vercel
+ - node_modules/ , .next/   = ไฟล์ที่ build ขึ้นมา
 
  ถ้าอยากแก้โค้ดแล้วลองรันในเครื่อง (ทำหรือไม่ทำก็ได้ ไม่จำเป็น)
    ต้องมี Node.js -> npm install -> npm run dev -> เปิด localhost:3000
@@ -190,6 +198,14 @@ Deploy = OK  Next.js 15 + Vercel (ทดสอบ next build ผ่านแล�
 -----------------------------------------------------------
 [ ประวัติการแก้ไข ]
 -----------------------------------------------------------
+2026-08-27  v2.2  deploy ขึ้น Vercel จริง
+                  - URL: https://kandelivery.vercel.app
+                  - โปรเจกต์ sutee-admin/kandelivery เชื่อมกับ GitHub repo
+                    KanDelivery แล้ว (push main = build อัตโนมัติ)
+                  - ตรวจเว็บจริงหลัง deploy: หน้าล็อกอิน / เมนู 7 หน้า /
+                    การ์ด Google Maps / โหลด app.js ครบทุกอย่าง (HTTP 200)
+                  - จัด .gitignore กัน .vercel และ .env.local ไม่ให้ขึ้น git
+
 2026-08-27  v2.1  ต่อหน้าแผนที่ประเทศไทยเข้ากับ Google Maps (ข้อ 11)
                   - ฝังแผนที่ Google ในหน้า เลื่อน/ซูมตามจังหวัดหรือจุดส่งที่คลิก
                   - ปุ่ม "เปิดใน Google Maps" และ "เส้นทางส่งของวันที่เลือก"

@@ -1,7 +1,11 @@
 node_modules/
 .next/
 out/
-.vercel/
-.env*.local
 *.log
+
+# Vercel (สร้างอัตโนมัติตอน link โปรเจกต์ - มี token ห้าม commit)
+.vercel
+.env*
+
+# ตั้งค่าสิทธิ์ส่วนตัวของ Claude Code
 .claude/settings.local.json
