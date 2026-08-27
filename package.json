@@ -1,0 +1,16 @@
+{
+  "name": "kaoan-delivery",
+  "version": "2.0.0",
+  "private": true,
+  "description": "ระบบบันทึกสถานะการส่งสินค้า - บริษัท เกาอาน จำกัด (Next.js + Vercel)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^15.5.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
